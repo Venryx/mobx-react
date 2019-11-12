@@ -841,14 +841,19 @@ test.skip("#709 - applying observer on React.memo component", () => {
 })
 
 test("#797 - replacing this.render should not break disposing of reaction", () => {
+    let newRenderFuncCalled = false
     @observer
     class Component extends React.Component {
+        @observable
+        thing = 1
+
         render() {
             return <div />
         }
         swapRenderFunc() {
             this.render = () => {
-                return <span />
+                newRenderFuncCalled = true
+                return <span>{this.thing}</span>
             }
         }
     }
@@ -860,6 +865,10 @@ test("#797 - replacing this.render should not break disposing of reaction", () =
     expect(reaction.isDisposed).toEqual(false)
 
     compRef.current.swapRenderFunc()
+    //compRef.current.forceUpdate()         // new render-func runs if triggered by this
+    compRef.current.thing = 5 // but not if by this
+    expect(newRenderFuncCalled).toEqual(true)
+
     unmount()
     expect(reaction.isDisposed).toEqual(true)
 })
